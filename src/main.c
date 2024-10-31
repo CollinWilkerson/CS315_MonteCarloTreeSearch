@@ -1,25 +1,149 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
+#include <string.h>
 
-#include "ticTacToe.h"
+#include "common.h"
+#include "agentA.h"
+#include "agentB.h"
+
+#define AGENT_A_PLAYER 'X'
+#define AGENT_B_PLAYER 'O'
 
 int main() {
-	int winner = 0;
-	int player = 0;
-	int row;
-	int col;
+	srand(time(NULL));
+	int choice;
+	printf("Select an option:\n");
+	printf("1. Watch a single game\n");
+	printf("2. Run & plot multiple games\n");
+	printf("3. Play against an MCTS algorithm\n");
+	printf("Enter your choice: ");
+	scanf("%d", &choice);
 
-	render();
-	
-	//game runs until someone wins
-	while (winner == 0) {
-		printf("Enter a row: ");
-		scanf("%d", &row);
-		printf("Enter a col: ");
-		scanf("%d", &col);
-		winner = play(player, row, col);
-		render();
-		player++;
-		player = player % 2;
+	if (choice == 1) {
+		initBoard();
+		char winner = ' ';
+		int turn = rand() % 2; // Randomly select starting player (0 or 1)
+		while (winner == ' ') {
+			displayBoard();
+			if (turn == 0) {
+				agentA_move(AGENT_A_PLAYER);
+				turn = 1;
+			} else {
+				agentB_move(AGENT_B_PLAYER);
+				turn = 0;
+			}
+			winner = checkWinner();
+
+			usleep(300000); // Wait 300ms between moves
+		}
+		displayBoard();
+		if (winner == 'D') {
+			printf("It's a draw!\n");
+		} else if (winner == AGENT_A_PLAYER) {
+			printf("Agent A (Player %c) wins!\n", winner);
+		} else if (winner == AGENT_B_PLAYER) {
+			printf("Agent B (Player %c) wins!\n", winner);
+		}
+	} else if (choice == 2) {
+		int numGames;
+		printf("Enter the number of games to run: ");
+		scanf("%d", &numGames);
+
+		char suppressChoice;
+		printf("Suppress agent selection messages? (y/n): ");
+		scanf(" %c", &suppressChoice);
+		suppressMessages = (suppressChoice == 'y') ? 1 : 0;
+
+		int agentAWins = 0, agentBWins = 0, draws = 0;
+		FILE *fp = fopen("results.dat", "w");
+
+		for (int i = 1; i <= numGames; i++) {
+			initBoard();
+			char winner = ' ';
+			int turn = rand() % 2; /* Randomly select starting player (0 or 1) */
+			while (winner == ' ') {
+				if (turn == 0) {
+					agentA_move(AGENT_A_PLAYER);
+					turn = 1;
+				} else {
+					agentB_move(AGENT_B_PLAYER);
+					turn = 0;
+				}
+				winner = checkWinner();
+			}
+			if (winner == 'X') agentAWins++;
+			else if (winner == 'O') agentBWins++;
+			else draws++;
+
+			fprintf(fp, "%d %f %f %f\n", i,
+					(float)agentAWins / i,
+					(float)agentBWins / i,
+					(float)draws / i);
+		}
+		fclose(fp);
+
+		/* change this to the directory of your gnuplot binary!! */
+		/*FILE *gnuplotPipe = popen("gnuplot -persistent", "w");*/
+		FILE *gnuplotPipe = popen("/opt/homebrew/bin/gnuplot -persistent", "w");
+		if (gnuplotPipe) {
+			fprintf(gnuplotPipe, "set title 'Agent Success Rates Over Games'\n");
+			fprintf(gnuplotPipe, "set xlabel 'Number of Games'\n");
+			fprintf(gnuplotPipe, "set ylabel 'Success Rate'\n");
+			fprintf(gnuplotPipe, "plot 'results.dat' using 1:2 with lines title 'Agent A', \\\n");
+			fprintf(gnuplotPipe, "     'results.dat' using 1:3 with lines title 'Agent B', \\\n");
+			fprintf(gnuplotPipe, "     'results.dat' using 1:4 with lines title 'Draws'\n");
+			fflush(gnuplotPipe);
+			pclose(gnuplotPipe);
+		} else {
+			printf("Error: Could not open gnuplot.\n");
+		}
+
+		printf("Results have been written to results.dat and plotted using gnuplot.\n");
+	} else if (choice == 3) {
+		char opponent;
+		printf("Select your opponent ('a' for agentA, 'b' for agentB): ");
+		scanf(" %c", &opponent);
+
+		initBoard();
+		char winner = ' ';
+		int turn = rand() % 2; // Randomly select starting player (0 or 1)
+		while (winner == ' ') {
+			displayBoard();
+			if (turn == 0) {
+				int row, col;
+				printf("Enter your move (row and column): ");
+				scanf("%d %d", &row, &col);
+				if (row >= 0 && row < 3 && col >= 0 && col < 3 && board[row][col] == ' ') {
+					board[row][col] = 'X'; // Human plays 'X'
+					turn = 1;
+				} else {
+					printf("Invalid move. Try again.\n");
+				}
+			} else {
+				if (opponent == 'a') {
+					agentA_move(AGENT_A_PLAYER);
+				} else if (opponent == 'b') {
+					agentB_move(AGENT_B_PLAYER);
+				} else {
+					printf("Invalid opponent selection.\n");
+					break;
+				}
+				turn = 0;
+			}
+			winner = checkWinner();
+		}
+		displayBoard();
+		if (winner == 'D') {
+			printf("It's a draw!\n");
+		} else if (winner == 'X') {
+			printf("You win!\n");
+		} else {
+			printf("Computer (%c) wins!\n", winner);
+		}
+	} else {
+		printf("Invalid choice.\n");
 	}
-	printf("Player %d is the winner!", winner);
+	return 0;
 }

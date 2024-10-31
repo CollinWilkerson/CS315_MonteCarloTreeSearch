@@ -52,3 +52,10 @@ Mkfile.old
 dkms.conf
 /out
 /.vs
+
+Makefile
+MonteCarlo
+cmake_install.cmake
+CMakeFiles/
+CMakeCache.txt
+results.dat
