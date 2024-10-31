@@ -3,4 +3,4 @@
 
 void agentB_move(char player);
 
-#endif // AGENTB_H 
+#endif

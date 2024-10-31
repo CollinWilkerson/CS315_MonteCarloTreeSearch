@@ -8,4 +8,4 @@ void initBoard();
 void displayBoard();
 char checkWinner();
 
-#endif // COMMON_H 
+#endif

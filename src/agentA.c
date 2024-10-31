@@ -7,7 +7,7 @@
 #include "agentA.h"
 
 /* Define constants for MCTS */
-#define SIMULATION_ITERATIONS 1000
+#define SIMULATION_ITERATIONS 5000
 #define UCB1_CONST 0.7 /* Adjusted value */
 
 /* Node structure for MCTS */
@@ -17,7 +17,7 @@ typedef struct Node {
     int move_row;
     int move_col;
     int visits;
-    int wins;
+    double wins;
     struct Node* parent;
     struct Node* children[9];
     int child_count;
@@ -29,15 +29,20 @@ static void addChild(Node* parent, Node* child);
 static Node* selectBestChild(Node* node);
 static void expandNode(Node* node);
 static char simulatePlayout(Node* node);
-static void backpropagate(Node* node, char result);
+static void backpropagate(Node* node, char result, char agentPlayer);
 static int isTerminalState(char state[3][3]);
 static int checkWinnerState(char state[3][3]);
 static void copyState(char dest[3][3], char src[3][3]);
 static void freeTree(Node* node);
 static void selectRandomMove(char state[3][3], int *row, int *col);
 
+/* Add these function prototypes */
+static int findWinningMove(char state[3][3], char player, int *row, int *col);
+static int findBlockingMove(char state[3][3], char player, int *row, int *col);
+
 void agentA_move(char player) {
-    Node* root = createNode(board, player, -1, -1, NULL);
+    char opponent = (player == 'X') ? 'O' : 'X';
+    Node* root = createNode(board, opponent, -1, -1, NULL);
 
     for (int i = 0; i < SIMULATION_ITERATIONS; i++) {
         Node* promisingNode = root;
@@ -59,7 +64,7 @@ void agentA_move(char player) {
         char playoutResult = simulatePlayout(promisingNode);
 
         /* Backpropagation */
-        backpropagate(promisingNode, playoutResult);
+        backpropagate(promisingNode, playoutResult, player);
     }
 
     /* Choosing the best move */
@@ -109,7 +114,7 @@ static Node* createNode(char state[3][3], int player, int move_row, int move_col
     node->move_row = move_row;
     node->move_col = move_col;
     node->visits = 0;
-    node->wins = 0;
+    node->wins = 0.0;
     node->parent = parent;
     node->child_count = 0;
     return node;
@@ -124,6 +129,12 @@ static Node* selectBestChild(Node* node) {
     double bestValue = -DBL_MAX;
     for (int i = 0; i < node->child_count; i++) {
         Node* child = node->children[i];
+
+        /* If the child has not been visited yet, prioritize it */
+        if (child->visits == 0) {
+            return child;
+        }
+
         double winRate = (double)child->wins / (double)child->visits;
         double ucbValue = winRate +
             UCB1_CONST * sqrt(log((double)node->visits) / (double)child->visits);
@@ -137,7 +148,6 @@ static Node* selectBestChild(Node* node) {
 }
 
 static void expandNode(Node* node) {
-    // Switch player for child nodes
     char nextPlayer = (node->player == 'X') ? 'O' : 'X';
 
     for (int i = 0; i < 3; i++) {
@@ -156,18 +166,15 @@ static void expandNode(Node* node) {
 static char simulatePlayout(Node* node) {
     char simState[3][3];
     copyState(simState, node->state);
-    char currentPlayer = node->player;
+    char currentPlayer = (node->player == 'X') ? 'O' : 'X';
     char winner;
     while ((winner = checkWinnerState(simState)) == ' ') {
         int moveRow, moveCol;
         if (findWinningMove(simState, currentPlayer, &moveRow, &moveCol)) {
-            // Play the winning move
             simState[moveRow][moveCol] = currentPlayer;
         } else if (findBlockingMove(simState, currentPlayer, &moveRow, &moveCol)) {
-            // Block opponent's winning move
             simState[moveRow][moveCol] = currentPlayer;
         } else {
-            // Choose a random move (or implement additional heuristics)
             selectRandomMove(simState, &moveRow, &moveCol);
             simState[moveRow][moveCol] = currentPlayer;
         }
@@ -176,24 +183,17 @@ static char simulatePlayout(Node* node) {
     return winner;
 }
 
-static void backpropagate(Node* node, char result) {
+static void backpropagate(Node* node, char result, char agentPlayer) {
     Node* currentNode = node;
-    char rootPlayer = node->player;
-
-    // Traverse up to find the root player
-    while (currentNode->parent != NULL) {
-        currentNode = currentNode->parent;
-    }
-    rootPlayer = currentNode->player;
-
-    currentNode = node;
     while (currentNode != NULL) {
         currentNode->visits++;
 
-        if (result == 'D') {
+        if (result == agentPlayer) {
+            currentNode->wins += 1.0;
+        } else if (result == 'D') {
             currentNode->wins += 0.5;
-        } else if (result == rootPlayer) {
-            currentNode->wins += 1;
+        } else {
+            /* currentNode->wins += 0.0; */
         }
 
         currentNode = currentNode->parent;
@@ -243,7 +243,7 @@ static void freeTree(Node* node) {
     free(node);
 }
 
-int findWinningMove(char state[3][3], char player, int *row, int *col) {
+static int findWinningMove(char state[3][3], char player, int *row, int *col) {
     // Check all empty positions to see if placing a mark there wins the game
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -262,7 +262,7 @@ int findWinningMove(char state[3][3], char player, int *row, int *col) {
     return 0;
 }
 
-int findBlockingMove(char state[3][3], char player, int *row, int *col) {
+static int findBlockingMove(char state[3][3], char player, int *row, int *col) {
     char opponent = (player == 'X') ? 'O' : 'X';
     return findWinningMove(state, opponent, row, col);
 }

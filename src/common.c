@@ -13,7 +13,7 @@ void initBoard() {
 }
 
 void displayBoard() {
-    system("cls"); /* Use "cls" instead of "clear" if on Windows */
+    system("clear"); /* Use "cls" instead of "clear" if on Windows */
     printf("\n");
     printf(" %c | %c | %c \n", board[0][0], board[0][1], board[0][2]);
     printf("---+---+---\n");

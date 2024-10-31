@@ -51,10 +51,15 @@ int main() {
 		printf("Enter the number of games to run: ");
 		scanf("%d", &numGames);
 
-		char suppressChoice;
-		printf("Suppress agent selection messages? (y/n): ");
-		scanf(" %c", &suppressChoice);
-		suppressMessages = (suppressChoice == 'y') ? 1 : 0;
+		char excludeDrawsChoice;
+		printf("Exclude draws from results? (y/n): ");
+		scanf(" %c", &excludeDrawsChoice);
+		int excludeDraws = (excludeDrawsChoice == 'y' || excludeDrawsChoice == 'Y') ? 1 : 0;
+
+		char suppressMessagesChoice;
+		printf("Suppress messages during simulation? (y/n): ");
+		scanf(" %c", &suppressMessagesChoice);
+		suppressMessages = (suppressMessagesChoice == 'y' || suppressMessagesChoice == 'Y') ? 1 : 0;
 
 		int agentAWins = 0, agentBWins = 0, draws = 0;
 		FILE *fp = fopen("results.dat", "w");
@@ -73,14 +78,23 @@ int main() {
 				}
 				winner = checkWinner();
 			}
-			if (winner == 'X') agentAWins++;
-			else if (winner == 'O') agentBWins++;
-			else draws++;
+			if (winner == AGENT_A_PLAYER) {
+				agentAWins++;
+			} else if (winner == AGENT_B_PLAYER) {
+				agentBWins++;
+			} else if (winner == 'D') {
+				draws++;
+			}
+
+			int totalGames = excludeDraws ? (agentAWins + agentBWins) : i;
+			float agentASuccessRate = totalGames > 0 ? (float)agentAWins / totalGames : 0.0f;
+			float agentBSuccessRate = totalGames > 0 ? (float)agentBWins / totalGames : 0.0f;
+			float drawRate = excludeDraws ? 0.0f : (float)draws / i;
 
 			fprintf(fp, "%d %f %f %f\n", i,
-					(float)agentAWins / i,
-					(float)agentBWins / i,
-					(float)draws / i);
+					agentASuccessRate,
+					agentBSuccessRate,
+					drawRate);
 		}
 		fclose(fp);
 
@@ -101,6 +115,9 @@ int main() {
 		}
 
 		printf("Results have been written to results.dat and plotted using gnuplot.\n");
+
+		/* Reset suppressMessages */
+		suppressMessages = 0;
 	} else if (choice == 3) {
 		char opponent;
 		printf("Select your opponent ('a' for agentA, 'b' for agentB): ");
@@ -116,7 +133,7 @@ int main() {
 				printf("Enter your move (row and column): ");
 				scanf("%d %d", &row, &col);
 				if (row >= 0 && row < 3 && col >= 0 && col < 3 && board[row][col] == ' ') {
-					board[row][col] = 'X'; // Human plays 'X'
+					board[row][col] = 'O'; // Human plays 'X'
 					turn = 1;
 				} else {
 					printf("Invalid move. Try again.\n");
@@ -138,9 +155,9 @@ int main() {
 		if (winner == 'D') {
 			printf("It's a draw!\n");
 		} else if (winner == 'X') {
-			printf("You win!\n");
-		} else {
 			printf("Computer (%c) wins!\n", winner);
+		} else {
+			printf("You win!\n");
 		}
 	} else {
 		printf("Invalid choice.\n");
