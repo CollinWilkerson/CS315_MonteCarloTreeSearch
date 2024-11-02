@@ -3,7 +3,7 @@
 #include "common.h"
 #include "agentB.h"
 
-void agentB_move(char player) {
+void agentRandom_move(char player) {
     /* MCTS Agent B */
     /*
     Selection:
@@ -28,6 +28,6 @@ void agentB_move(char player) {
     board[i][j] = player;
 
     if (suppressMessages == 0) {
-        printf("AgentB is making a move.\n");
+        printf("Random Agent is making a move.\n");
     }
 } 
