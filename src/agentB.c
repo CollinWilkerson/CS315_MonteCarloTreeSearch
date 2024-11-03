@@ -1,8 +1,21 @@
 #include <math.h>
 
+#include "common.h"
 #include "agentB.h"
 
 #define EXPLORATION_CONSTANT 1.41 //define exploration constant for UCB1 formula//
+
+typedef struct Node {
+    char state[3][3];
+    int player; /* 'X' or 'O' */
+    int move_row;
+    int move_col;
+    int visits;
+    double wins;
+    struct Node* parent;
+    struct Node* children[9];
+    int num_children;
+} Node;
 
 //function to create a new node with a given board state//
 Node* create_node(char board[3][3]) {
