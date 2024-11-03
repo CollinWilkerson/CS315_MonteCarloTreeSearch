@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "common.h"
-#include "agentB.h"
+#include "agentRandom.h"
 
 void agentRandom_move(char player) {
     /* MCTS Agent B */

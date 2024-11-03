@@ -1,7 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#define SLEEP(ms) Sleep(ms)
+#else
 #include <unistd.h>
+#define SLEEP(ms) usleep((ms) * 1000)
+#endif
 #include <string.h>
 
 #include "common.h"
@@ -109,7 +115,7 @@ int main() {
 
 		/* change this to the directory of your gnuplot binary!! */
 		/*FILE *gnuplotPipe = popen("gnuplot -persistent", "w");*/
-		FILE *gnuplotPipe = popen("/opt/homebrew/bin/gnuplot -persistent", "w");
+		FILE *gnuplotPipe = popen("C:/gnuplot -persistent", "w");
 		if (gnuplotPipe) {
 			fprintf(gnuplotPipe, "set title 'Agent Success Rates Over Games'\n");
 			fprintf(gnuplotPipe, "set xlabel 'Number of Games'\n");

@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include "common.h"
 #include "agentA.h"
+#include "agentB.h"
 #include "agentRandom.h"
 
 char board[3][3];
@@ -54,6 +55,9 @@ char checkWinner() {
 void move(char agent, char player) {
     if (agent == 'a') {
         agentA_move(player);
+    }
+    if (agent == 'b') {
+        agentB_move(player);
     }
     if (agent == 'r') {
         agentRandom_move(player);
