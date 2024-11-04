@@ -44,7 +44,7 @@ int main() {
 			}
 			winner = checkWinner();
 
-			usleep(300000); // Wait 300ms between moves
+			SLEEP(300000); // Wait 300ms between moves
 		}
 		displayBoard();
 		if (winner == 'D') {

@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <stdio.h>
 #include <math.h>
 
 #include "common.h"
@@ -15,6 +17,7 @@ typedef struct Node {
     struct Node* parent;
     struct Node* children[9];
     int num_children;
+    char board[3][3];
 } Node;
 
 //function to create a new node with a given board state//
@@ -113,14 +116,14 @@ void agentB_move(char player) {
 
         //expansion: add children if node is non-terminal//
         if (checkWinner(node->board) == ' ') {
-            expand_node(node, char player); //expand with moves for 'O'//
+            expand_node(node, player); //expand with moves for 'O'//
         }
 
         //simulation: play a random game to determine outcome//
-        char winner = simulate_random_game(node->board, char player);
+        char winner = simulate_random_game(node->board, player);
 
         //backpropagation: update win/visit counts//
-        backpropagate(node, winner, char player);
+        backpropagate(node, winner, player);
     }
 
     // choose the child with the highest win rate as the best move//
