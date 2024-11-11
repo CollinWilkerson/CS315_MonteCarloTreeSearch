@@ -13,6 +13,7 @@
 #include "common.h"
 #include "agentA.h"
 #include "agentRandom.h"
+#include "agentB.h"
 
 #define AGENT_A_PLAYER 'X'
 #define AGENT_B_PLAYER 'O'
@@ -88,7 +89,7 @@ int main() {
 					move(firstAgent,AGENT_A_PLAYER);
 					turn = 1;
 				} else {
-					agentB_move(secondAgent, AGENT_B_PLAYER);
+					move(secondAgent, AGENT_B_PLAYER);
 					turn = 0;
 				}
 				winner = checkWinner();

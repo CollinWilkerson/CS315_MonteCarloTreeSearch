@@ -3,8 +3,6 @@
 
 #include "common.h"
 
-
-
 /* TODO, Prototypes */
 void agentB_move(char player);
 
