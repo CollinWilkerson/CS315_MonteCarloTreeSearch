@@ -7,5 +7,5 @@ extern int suppressMessages;
 void initBoard();
 void displayBoard();
 char checkWinner();
-
+void move(char agent, char player);
 #endif

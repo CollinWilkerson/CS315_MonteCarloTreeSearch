@@ -1,15 +1,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#define SLEEP(ms) Sleep(ms)
+#else
 #include <unistd.h>
+#define SLEEP(ms) usleep((ms) * 1000)
+#endif
 #include <string.h>
 
 #include "common.h"
 #include "agentA.h"
+#include "agentRandom.h"
 #include "agentB.h"
 
 #define AGENT_A_PLAYER 'X'
 #define AGENT_B_PLAYER 'O'
+#define AGENT_A 'a'
+#define AGNET_RANDOM 'r'
 
 int main() {
 	srand(time(NULL));
@@ -31,12 +40,12 @@ int main() {
 				agentA_move(AGENT_A_PLAYER);
 				turn = 1;
 			} else {
-				agentB_move(AGENT_B_PLAYER);
+				agentRandom_move(AGENT_B_PLAYER);
 				turn = 0;
 			}
 			winner = checkWinner();
 
-			usleep(300000); // Wait 300ms between moves
+			SLEEP(300000); // Wait 300ms between moves
 		}
 		displayBoard();
 		if (winner == 'D') {
@@ -47,6 +56,13 @@ int main() {
 			printf("Agent B (Player %c) wins!\n", winner);
 		}
 	} else if (choice == 2) {
+		char firstAgent;
+		char secondAgent;
+		printf("Enter first player agent (a - MCTS agent, b - MCTS agent, r - Random agent): ");
+		scanf("%c", &firstAgent);
+		printf("Enter second player agent (a - MCTS agent, b - MCTS agent, r - Random agent): ");
+		scanf("%c", &secondAgent);
+
 		int numGames;
 		printf("Enter the number of games to run: ");
 		scanf("%d", &numGames);
@@ -70,10 +86,10 @@ int main() {
 			int turn = rand() % 2; /* Randomly select starting player (0 or 1) */
 			while (winner == ' ') {
 				if (turn == 0) {
-					agentA_move(AGENT_A_PLAYER);
+					move(firstAgent,AGENT_A_PLAYER);
 					turn = 1;
 				} else {
-					agentB_move(AGENT_B_PLAYER);
+					move(secondAgent, AGENT_B_PLAYER);
 					turn = 0;
 				}
 				winner = checkWinner();
@@ -100,7 +116,7 @@ int main() {
 
 		/* change this to the directory of your gnuplot binary!! */
 		/*FILE *gnuplotPipe = popen("gnuplot -persistent", "w");*/
-		FILE *gnuplotPipe = popen("/opt/homebrew/bin/gnuplot -persistent", "w");
+		FILE *gnuplotPipe = popen("C:/gnuplot -persistent", "w");
 		if (gnuplotPipe) {
 			fprintf(gnuplotPipe, "set title 'Agent Success Rates Over Games'\n");
 			fprintf(gnuplotPipe, "set xlabel 'Number of Games'\n");
@@ -120,7 +136,7 @@ int main() {
 		suppressMessages = 0;
 	} else if (choice == 3) {
 		char opponent;
-		printf("Select your opponent ('a' for agentA, 'b' for agentB): ");
+		printf("Select your opponent ('a' for agentA, 'b' for agentB, 'r' for Random agent): ");
 		scanf(" %c", &opponent);
 
 		initBoard();
@@ -133,20 +149,13 @@ int main() {
 				printf("Enter your move (row and column): ");
 				scanf("%d %d", &row, &col);
 				if (row >= 0 && row < 3 && col >= 0 && col < 3 && board[row][col] == ' ') {
-					board[row][col] = 'O'; // Human plays 'X'
+					board[row][col] = 'O'; // Human plays 'O'
 					turn = 1;
 				} else {
 					printf("Invalid move. Try again.\n");
 				}
 			} else {
-				if (opponent == 'a') {
-					agentA_move(AGENT_A_PLAYER);
-				} else if (opponent == 'b') {
-					agentB_move(AGENT_B_PLAYER);
-				} else {
-					printf("Invalid opponent selection.\n");
-					break;
-				}
+				move(opponent, 'X');
 				turn = 0;
 			}
 			winner = checkWinner();
@@ -162,5 +171,6 @@ int main() {
 	} else {
 		printf("Invalid choice.\n");
 	}
+
 	return 0;
 }
