@@ -80,12 +80,12 @@ void agentA_move(char player) {
     }
 
     if (suppressMessages == 0) {
-        printf("AgentA is considering %d possible moves.\n", root->child_count);
+        printf("Agent A is considering %d possible moves.\n", root->child_count);
         if (bestChild) {
-            printf("AgentA selects move at row %d, column %d with win rate %.2f%%.\n",
+            printf("Agent A selects move at row %d, column %d with win rate %.2f%%.\n",
                 bestChild->move_row, bestChild->move_col, bestWinRate * 100);
         } else {
-            printf("AgentA failed to select a best move, choosing randomly.\n");
+            printf("Agent A failed to select a best move, choosing randomly.\n");
         }
     }
 
