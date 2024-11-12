@@ -17,9 +17,6 @@
 
 #define AGENT_A_PLAYER 'X'
 #define AGENT_B_PLAYER 'O'
-#define AGENT_A 'a'
-#define AGENT_B 'b'
-#define AGENT_C 'c'
 
 int main() {
 	srand(time(NULL));
@@ -58,12 +55,16 @@ int main() {
 			printf("Agent B (Player %c) wins!\n", winner);
 		}
 	} else if (choice == 2) {
-		char firstAgent;
-		char secondAgent;
+		char firstAgent, secondAgent;
+		char firstPlayerSymbol, secondPlayerSymbol;
 		printf("Enter first player agent (a - Agent A, b - Agent B, c - Agent C): ");
 		scanf(" %c", &firstAgent);
 		printf("Enter second player agent (a - Agent A, b - Agent B, c - Agent C): ");
 		scanf(" %c", &secondAgent);
+
+		// Assign player symbols
+		firstPlayerSymbol = 'X';
+		secondPlayerSymbol = 'O';
 
 		int numGames;
 		printf("Enter the number of games to run: ");
@@ -79,72 +80,76 @@ int main() {
 		scanf(" %c", &suppressMessagesChoice);
 		suppressMessages = (suppressMessagesChoice == 'y' || suppressMessagesChoice == 'Y') ? 1 : 0;
 
-		int agentAWins = 0, agentBWins = 0, draws = 0;
+		int agent1Wins = 0, agent2Wins = 0, draws = 0;
 		FILE *fp = fopen("results.dat", "w");
 
 		for (int i = 1; i <= numGames; i++) {
-			initBoard();
-			char winner = ' ';
-			int turn = rand() % 2; /* Randomly select starting player (0 or 1) */
-			while (winner == ' ') {
-				if (turn == 0) {
-					move(firstAgent,AGENT_A_PLAYER);
-					turn = 1;
-				} else {
-					move(secondAgent, AGENT_B_PLAYER);
-					turn = 0;
+				initBoard();
+				char winner = ' ';
+				int turn = rand() % 2; /* Randomly select starting player (0 or 1) */
+				while (winner == ' ') {
+						if (turn == 0) {
+								move(firstAgent, firstPlayerSymbol);
+								turn = 1;
+						} else {
+								move(secondAgent, secondPlayerSymbol);
+								turn = 0;
+						}
+						winner = checkWinner();
 				}
-				winner = checkWinner();
-			}
-			if (winner == AGENT_A_PLAYER) {
-				if (suppressMessages == 0) {
-					printf("Agent %c wins game %d.\n", firstAgent, i);
+				if (winner == firstPlayerSymbol) {
+						if (suppressMessages == 0) {
+								printf("Agent %c wins game %d.\n", firstAgent, i);
+						}
+						agent1Wins++;
+				} else if (winner == secondPlayerSymbol) {
+						if (suppressMessages == 0) {
+								printf("Agent %c wins game %d.\n", secondAgent, i);
+						}
+						agent2Wins++;
+				} else if (winner == 'D') {
+						if (suppressMessages == 0) {
+								printf("Game %d is a draw.\n", i);
+						}
+						draws++;
 				}
-				agentAWins++;
-			} else if (winner == AGENT_B_PLAYER) {
-				if (suppressMessages == 0) {
-					printf("Agent %c wins game %d.\n", secondAgent, i);
-				}
-				agentBWins++;
-			} else if (winner == 'D') {
-				if (suppressMessages == 0) {
-					printf("Game %d is a draw.\n", i);
-				}
-				draws++;
-			}
 
-			int totalGames = excludeDraws ? (agentAWins + agentBWins) : i;
-			float agentASuccessRate = totalGames > 0 ? (float)agentAWins / totalGames : 0.0f;
-			float agentBSuccessRate = totalGames > 0 ? (float)agentBWins / totalGames : 0.0f;
-			float drawRate = excludeDraws ? 0.0f : (float)draws / i;
+				int totalGames = excludeDraws ? (agent1Wins + agent2Wins) : i;
+				float agent1SuccessRate = totalGames > 0 ? (float)agent1Wins / totalGames : 0.0f;
+				float agent2SuccessRate = totalGames > 0 ? (float)agent2Wins / totalGames : 0.0f;
+				float drawRate = excludeDraws ? 0.0f : (float)draws / i;
 
-			fprintf(fp, "%d %f %f %f\n", i,
-					agentASuccessRate,
-					agentBSuccessRate,
-					drawRate);
+				fprintf(fp, "%d %f %f %f\n", i,
+								agent1SuccessRate,
+								agent2SuccessRate,
+								drawRate);
 		}
 		fclose(fp);
 
 		/* change this to the directory of your gnuplot binary!! */
 		#ifdef __APPLE__
-			FILE *gnuplotPipe = popen("/opt/homebrew/bin/gnuplot -persistent", "w");
+				FILE *gnuplotPipe = popen("/opt/homebrew/bin/gnuplot -persistent", "w");
 		#elif _WIN32
-			FILE *gnuplotPipe = popen("C:/gnuplot -persistent", "w");
+				FILE *gnuplotPipe = popen("C:/gnuplot -persistent", "w");
 		#else
-			FILE *gnuplotPipe = popen("gnuplot -persistent", "w");
+				FILE *gnuplotPipe = popen("gnuplot -persistent", "w");
 		#endif
 		if (gnuplotPipe) {
-			fprintf(gnuplotPipe, "set title 'Agent Success Rates Over Games'\n");
-			fprintf(gnuplotPipe, "set xlabel 'Number of Games'\n");
-			fprintf(gnuplotPipe, "set ylabel 'Success Rate'\n");
-			fprintf(gnuplotPipe, "plot 'results.dat' using 1:2 with lines title 'Agent A', \\\n");
-			fprintf(gnuplotPipe, "     'results.dat' using 1:3 with lines title 'Agent B', \\\n");
-			fprintf(gnuplotPipe, "     'results.dat' using 1:4 with lines title 'Draws'\n");
-			fprintf(gnuplotPipe, "pause -1\n");
-			fflush(gnuplotPipe);
-			pclose(gnuplotPipe);
+				fprintf(gnuplotPipe, "set title 'Agent Success Rates Over Games'\n");
+				fprintf(gnuplotPipe, "set xlabel 'Number of Games'\n");
+				fprintf(gnuplotPipe, "set ylabel 'Success Rate'\n");
+				fprintf(gnuplotPipe, "plot 'results.dat' using 1:2 with lines lw 5 title 'Agent %c', \\\n", firstAgent);
+				fprintf(gnuplotPipe, "     'results.dat' using 1:3 with lines lw 5 title 'Agent %c'", secondAgent);
+				if (!excludeDraws) {
+						fprintf(gnuplotPipe, ", \\\n     'results.dat' using 1:4 with lines lw 5 title 'Draws'\n");
+				} else {
+						fprintf(gnuplotPipe, "\n");
+				}
+				fprintf(gnuplotPipe, "pause -1\n");
+				fflush(gnuplotPipe);
+				pclose(gnuplotPipe);
 		} else {
-			printf("Error: Could not open gnuplot.\n");
+				printf("Error: Could not open gnuplot.\n");
 		}
 
 		printf("Results have been written to results.dat and plotted using gnuplot.\n");

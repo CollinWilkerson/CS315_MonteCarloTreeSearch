@@ -22,9 +22,9 @@ typedef struct Node {
 
 /* Function prototypes */
 static Node* create_node(char state[3][3], char player, int move_row, int move_col, Node* parent);
-static void expand_node(Node* node);
+static void expand_node(Node* node, char agent_player, char opponent_player);
 static Node* select_best_child(Node* node);
-static char simulate_random_game(Node* node);
+static char simulate_random_game(Node* node, char agent_player, char opponent_player);
 static void backpropagate(Node* node, char winner, char agentPlayer);
 static int is_terminal(char state[3][3]);
 static char get_winner(char state[3][3]);
@@ -32,9 +32,12 @@ static void copy_state(char dest[3][3], char src[3][3]);
 static void free_tree(Node* node);
 
 void agentB_move(char player) {
-    Node* root = create_node(board, player, -1, -1, NULL);
+    char agent_player = player;
+    char opponent_player = (player == 'X') ? 'O' : 'X';
 
-    int iterations = 1000;
+    Node* root = create_node(board, agent_player, -1, -1, NULL);
+
+    int iterations = 5000; // Increased iterations
     for (int i = 0; i < iterations; ++i) {
         Node* node = root;
 
@@ -45,14 +48,14 @@ void agentB_move(char player) {
 
         /* Expansion */
         if (!is_terminal(node->state)) {
-            expand_node(node);
+            expand_node(node, agent_player, opponent_player);
         }
 
         /* Simulation */
-        char winner = simulate_random_game(node);
+        char winner = simulate_random_game(node, agent_player, opponent_player);
 
         /* Backpropagation */
-        backpropagate(node, winner, player);
+        backpropagate(node, winner, agent_player);
     }
 
     /* Choose the best move */
@@ -108,8 +111,8 @@ static Node* create_node(char state[3][3], char player, int move_row, int move_c
     return node;
 }
 
-static void expand_node(Node* node) {
-    char next_player = (node->player == 'X') ? 'O' : 'X';
+static void expand_node(Node* node, char agent_player, char opponent_player) {
+    char next_player = (node->player == agent_player) ? opponent_player : agent_player;
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
@@ -141,10 +144,10 @@ static Node* select_best_child(Node* node) {
     return best_child;
 }
 
-static char simulate_random_game(Node* node) {
+static char simulate_random_game(Node* node, char agent_player, char opponent_player) {
     char sim_state[3][3];
     copy_state(sim_state, node->state);
-    char current_player = node->player;
+    char current_player = (node->player == agent_player) ? opponent_player : agent_player;
     char winner;
     while ((winner = get_winner(sim_state)) == ' ') {
         int move_row = -1, move_col = -1;
@@ -165,7 +168,7 @@ static char simulate_random_game(Node* node) {
         move_row = empty_cells[rand_index][0];
         move_col = empty_cells[rand_index][1];
         sim_state[move_row][move_col] = current_player;
-        current_player = (current_player == 'X') ? 'O' : 'X';
+        current_player = (current_player == agent_player) ? opponent_player : agent_player;
     }
     return winner;
 }
