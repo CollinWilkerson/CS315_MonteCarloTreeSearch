@@ -2,23 +2,24 @@
 #include <stdlib.h>
 #include <time.h>
 #ifdef _WIN32
-#include <windows.h>
-#define SLEEP(ms) Sleep(ms)
+	#include <windows.h>
+	#define SLEEP(ms) Sleep(ms)
 #else
-#include <unistd.h>
-#define SLEEP(ms) usleep((ms) * 1000)
+	#include <unistd.h>
+	#define SLEEP(ms) usleep((ms) * 1000)
 #endif
 #include <string.h>
 
 #include "common.h"
 #include "agentA.h"
-#include "agentRandom.h"
 #include "agentB.h"
+#include "agentC.h"
 
 #define AGENT_A_PLAYER 'X'
 #define AGENT_B_PLAYER 'O'
 #define AGENT_A 'a'
-#define AGNET_RANDOM 'r'
+#define AGENT_B 'b'
+#define AGENT_C 'c'
 
 int main() {
 	srand(time(NULL));
@@ -37,15 +38,16 @@ int main() {
 		while (winner == ' ') {
 			displayBoard();
 			if (turn == 0) {
+				printf("Agent A's turn.\n");
 				agentA_move(AGENT_A_PLAYER);
 				turn = 1;
 			} else {
-				agentRandom_move(AGENT_B_PLAYER);
+				printf("Agent B's turn.\n");
+				agentB_move(AGENT_B_PLAYER);
 				turn = 0;
 			}
 			winner = checkWinner();
-
-			SLEEP(300000); // Wait 300ms between moves
+			SLEEP(500); // Wait 500ms between moves
 		}
 		displayBoard();
 		if (winner == 'D') {
@@ -58,10 +60,10 @@ int main() {
 	} else if (choice == 2) {
 		char firstAgent;
 		char secondAgent;
-		printf("Enter first player agent (a - MCTS agent, b - MCTS agent, r - Random agent): ");
-		scanf("%c", &firstAgent);
-		printf("Enter second player agent (a - MCTS agent, b - MCTS agent, r - Random agent): ");
-		scanf("%c", &secondAgent);
+		printf("Enter first player agent (a - Agent A, b - Agent B, c - Agent C): ");
+		scanf(" %c", &firstAgent);
+		printf("Enter second player agent (a - Agent A, b - Agent B, c - Agent C): ");
+		scanf(" %c", &secondAgent);
 
 		int numGames;
 		printf("Enter the number of games to run: ");
@@ -95,10 +97,19 @@ int main() {
 				winner = checkWinner();
 			}
 			if (winner == AGENT_A_PLAYER) {
+				if (suppressMessages == 0) {
+					printf("Agent %c wins game %d.\n", firstAgent, i);
+				}
 				agentAWins++;
 			} else if (winner == AGENT_B_PLAYER) {
+				if (suppressMessages == 0) {
+					printf("Agent %c wins game %d.\n", secondAgent, i);
+				}
 				agentBWins++;
 			} else if (winner == 'D') {
+				if (suppressMessages == 0) {
+					printf("Game %d is a draw.\n", i);
+				}
 				draws++;
 			}
 
@@ -115,8 +126,13 @@ int main() {
 		fclose(fp);
 
 		/* change this to the directory of your gnuplot binary!! */
-		/*FILE *gnuplotPipe = popen("gnuplot -persistent", "w");*/
-		FILE *gnuplotPipe = popen("C:/gnuplot -persistent", "w");
+		#ifdef __APPLE__
+			FILE *gnuplotPipe = popen("/opt/homebrew/bin/gnuplot -persistent", "w");
+		#elif _WIN32
+			FILE *gnuplotPipe = popen("C:/gnuplot -persistent", "w");
+		#else
+			FILE *gnuplotPipe = popen("gnuplot -persistent", "w");
+		#endif
 		if (gnuplotPipe) {
 			fprintf(gnuplotPipe, "set title 'Agent Success Rates Over Games'\n");
 			fprintf(gnuplotPipe, "set xlabel 'Number of Games'\n");
@@ -124,6 +140,7 @@ int main() {
 			fprintf(gnuplotPipe, "plot 'results.dat' using 1:2 with lines title 'Agent A', \\\n");
 			fprintf(gnuplotPipe, "     'results.dat' using 1:3 with lines title 'Agent B', \\\n");
 			fprintf(gnuplotPipe, "     'results.dat' using 1:4 with lines title 'Draws'\n");
+			fprintf(gnuplotPipe, "pause -1\n");
 			fflush(gnuplotPipe);
 			pclose(gnuplotPipe);
 		} else {
@@ -136,7 +153,7 @@ int main() {
 		suppressMessages = 0;
 	} else if (choice == 3) {
 		char opponent;
-		printf("Select your opponent ('a' for agentA, 'b' for agentB, 'r' for Random agent): ");
+		printf("Select your opponent ('a' for Agent A, 'b' for Agent B, 'c' for Agent C): ");
 		scanf(" %c", &opponent);
 
 		initBoard();

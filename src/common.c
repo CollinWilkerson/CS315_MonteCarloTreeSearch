@@ -3,7 +3,7 @@
 #include "common.h"
 #include "agentA.h"
 #include "agentB.h"
-#include "agentRandom.h"
+#include "agentC.h"
 
 char board[3][3];
 int suppressMessages = 0;
@@ -16,7 +16,11 @@ void initBoard() {
 }
 
 void displayBoard() {
-    system("clear"); /* Use "cls" instead of "clear" if on Windows */
+#ifdef _WIN32
+    system("cls"); // Use "cls" for Windows
+#else
+    system("clear"); // Use "clear" for Unix-based systems
+#endif
     printf("\n");
     printf(" %c | %c | %c \n", board[0][0], board[0][1], board[0][2]);
     printf("---+---+---\n");
@@ -55,11 +59,9 @@ char checkWinner() {
 void move(char agent, char player) {
     if (agent == 'a') {
         agentA_move(player);
-    }
-    if (agent == 'b') {
+    } else if (agent == 'b') {
         agentB_move(player);
-    }
-    if (agent == 'r') {
-        agentRandom_move(player);
+    } else if (agent == 'c') {
+        agentC_move(player);
     }
 }
